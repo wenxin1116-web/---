@@ -23,17 +23,26 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Resolve current source archive
+        id: archive
+        run: echo "path=$(cat archives/latest.txt)" >> "$GITHUB_OUTPUT"
+
+      - name: Unpack source archive
+        run: unzip -q "${{ steps.archive.outputs.path }}" -d source
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: package-lock.json
+          cache-dependency-path: source/package-lock.json
 
       - name: Install dependencies
+        working-directory: source
         run: npm install
 
       - name: Build GitHub Pages bundle
+        working-directory: source
         run: npm run build:github-pages
 
       - name: Setup Pages
@@ -42,7 +51,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: ./dist-pages
+          path: ./source/dist-pages
 
   deploy:
     environment:
