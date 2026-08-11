@@ -8,3 +8,5 @@
 ## V1.0.1（历史归档）
 - 完整源码归档：`archives/deerma-icons-v1.0.1-source.zip`
 - 保留在 Git 提交历史中，可随时回溯
+
+<!-- Pages rebuild trigger -->
