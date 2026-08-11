@@ -23,12 +23,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Resolve current source archive
-        id: archive
-        run: echo "path=$(cat archives/latest.txt)" >> "$GITHUB_OUTPUT"
-
-      - name: Unpack source archive
-        run: unzip -q "${{ steps.archive.outputs.path }}" -d source
+      - name: Unpack V1.0 source archive
+        run: unzip -q deerma-icons-v1.0-source.zip -d source
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
