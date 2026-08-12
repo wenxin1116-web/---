@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - codex/deerma-icons-v1.0.2
   workflow_dispatch:
 
 permissions:
@@ -23,23 +24,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Unpack V1.0 source archive
-        run: unzip -q deerma-icons-v1.0-source.zip -d source
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
-          cache-dependency-path: source/package-lock.json
 
       - name: Install dependencies
-        working-directory: source
-        run: npm install
+        run: corepack pnpm install --frozen-lockfile
 
       - name: Build GitHub Pages bundle
-        working-directory: source
-        run: npx vite build --config vite.pages.config.ts
+        run: corepack pnpm run build:github-pages
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
@@ -47,7 +41,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: ./source/dist-pages
+          path: ./dist-pages
 
   deploy:
     environment:
