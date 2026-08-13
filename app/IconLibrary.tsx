@@ -148,7 +148,7 @@ export function IconLibrary({ staticMode = false }: { staticMode?: boolean } = {
     if (staticMode) { setRole("viewer"); return; }
     fetch("/api/admin/session", { cache: "no-store" })
       .then((response) => response.json())
-      .then((data) => setRole(data.(!staticMode && role === "admin") ? "admin" : "viewer"))
+      .then((data) => setRole(data.role === "admin" ? "admin" : "viewer"))
       .catch(() => setRole("viewer"));
   }, [staticMode]);
 
@@ -351,7 +351,7 @@ export function IconLibrary({ staticMode = false }: { staticMode?: boolean } = {
         </nav>
         <div className="header-actions">
           {(!staticMode && role === "admin") && <button className="upload-button" onClick={() => setUploadOpen(true)}><Upload/> 上传图标</button>}
-          {(!staticMode && role === "admin") ? <button className="permission-button admin" onClick={logoutAdmin} title="退出管理模式"><ShieldCheck/><span>管理员</span><LogOut/></button> : <button className="permission-button" onClick={() => setLoginOpen(true)} disabled={role === "loading"}><LogIn/><span>{role === "loading" ? "权限检查中" : "管理员登录"}</span></button>}
+          {!staticMode && ((role === "admin") ? <button className="permission-button admin" onClick={logoutAdmin} title="退出管理模式"><ShieldCheck/><span>管理员</span><LogOut/></button> : <button className="permission-button" onClick={() => setLoginOpen(true)} disabled={role === "loading"}><LogIn/><span>{role === "loading" ? "权限检查中" : "管理员登录"}</span></button>)}
           <button className="icon-button" onClick={toggleTheme} aria-label={theme === "light" ? "切换到深色主题" : "切换到浅色主题"}>{theme === "light" ? <Moon/> : <Sun/>}</button>
         </div>
       </header>
