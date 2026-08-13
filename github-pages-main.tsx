@@ -14,6 +14,6 @@ document.body.classList.add("github-pages-body");
 
 createRoot(rootElement).render(
   <StrictMode>
-    <IconLibrary staticMode />
+    <IconLibrary />
   </StrictMode>,
 );
