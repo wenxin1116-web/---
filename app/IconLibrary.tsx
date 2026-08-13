@@ -88,7 +88,7 @@ function outlinedSvg(icon: IconData, size: number, weight: number) {
   return output;
 }
 
-export function IconLibrary() {
+export function IconLibrary({ staticMode = false }: { staticMode?: boolean } = {}) {
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<string | null>(null);
   const [size, setSize] = useState<(typeof sizes)[number]>(24);
@@ -113,7 +113,7 @@ export function IconLibrary() {
   const [newCategoryName, setNewCategoryName] = useState("");
   const [editingCategory, setEditingCategory] = useState<string | null>(null);
   const [editingCategoryName, setEditingCategoryName] = useState("");
-  const [role, setRole] = useState<"loading" | "viewer" | "admin">("loading");
+  const [role, setRole] = useState<"loading" | "viewer" | "admin">(staticMode ? "viewer" : "loading");
   const [loginOpen, setLoginOpen] = useState(false);
   const [loginForm, setLoginForm] = useState({ username: "", password: "" });
   const [loginError, setLoginError] = useState("");
@@ -145,11 +145,12 @@ export function IconLibrary() {
   }, []);
 
   useEffect(() => {
+    if (staticMode) { setRole("viewer"); return; }
     fetch("/api/admin/session", { cache: "no-store" })
       .then((response) => response.json())
-      .then((data) => setRole(data.role === "admin" ? "admin" : "viewer"))
+      .then((data) => setRole(data.(!staticMode && role === "admin") ? "admin" : "viewer"))
       .catch(() => setRole("viewer"));
-  }, []);
+  }, [staticMode]);
 
   useEffect(() => {
     const closeMenu = () => setActiveMenuId(null);
@@ -349,8 +350,8 @@ export function IconLibrary() {
           <button className={page === "library" ? "active" : ""} onClick={() => setPage("library")}>图标库</button>
         </nav>
         <div className="header-actions">
-          {role === "admin" && <button className="upload-button" onClick={() => setUploadOpen(true)}><Upload/> 上传图标</button>}
-          {role === "admin" ? <button className="permission-button admin" onClick={logoutAdmin} title="退出管理模式"><ShieldCheck/><span>管理员</span><LogOut/></button> : <button className="permission-button" onClick={() => setLoginOpen(true)} disabled={role === "loading"}><LogIn/><span>{role === "loading" ? "权限检查中" : "管理员登录"}</span></button>}
+          {(!staticMode && role === "admin") && <button className="upload-button" onClick={() => setUploadOpen(true)}><Upload/> 上传图标</button>}
+          {(!staticMode && role === "admin") ? <button className="permission-button admin" onClick={logoutAdmin} title="退出管理模式"><ShieldCheck/><span>管理员</span><LogOut/></button> : <button className="permission-button" onClick={() => setLoginOpen(true)} disabled={role === "loading"}><LogIn/><span>{role === "loading" ? "权限检查中" : "管理员登录"}</span></button>}
           <button className="icon-button" onClick={toggleTheme} aria-label={theme === "light" ? "切换到深色主题" : "切换到浅色主题"}>{theme === "light" ? <Moon/> : <Sun/>}</button>
         </div>
       </header>
@@ -358,7 +359,7 @@ export function IconLibrary() {
       {page === "guidelines" ? <Guidelines onBack={() => setPage("library")}/> : (
         <div className="workspace">
           <aside className={`sidebar ${mobileFilters ? "open" : ""}`}>
-            <div className="sidebar-title"><span>图标分类</span><div>{role === "admin" && <button className="category-settings" onClick={() => setCategoryManagerOpen(true)} aria-label="管理图标分类" title="管理分类"><Settings2/></button>}<button onClick={() => setMobileFilters(false)} aria-label="关闭筛选"><X/></button></div></div>
+            <div className="sidebar-title"><span>图标分类</span><div>{(!staticMode && role === "admin") && <button className="category-settings" onClick={() => setCategoryManagerOpen(true)} aria-label="管理图标分类" title="管理分类"><Settings2/></button>}<button onClick={() => setMobileFilters(false)} aria-label="关闭筛选"><X/></button></div></div>
             <button className={`category-row ${selected === null ? "selected" : ""}`} onClick={() => setSelected(null)}><span>全部图标</span><b>{allIcons.length}</b></button>
             {categoryList.map((category) => <button key={category} aria-pressed={selected === category} className={`category-row ${selected === category ? "selected" : ""}`} onClick={() => toggleCategory(category)}><span>{category}</span><b>{counts[category] || 0}</b></button>)}
           </aside>
@@ -377,8 +378,8 @@ export function IconLibrary() {
                 <div className="size-control" aria-label="图标尺寸">{sizes.map((value) => <button key={value} className={size === value ? "active" : ""} onClick={() => setSize(value)}>{value}</button>)}</div>
                 <div className="stroke-control" aria-label="视觉粗细"><SlidersHorizontal/><span>视觉粗细</span>{weights.map((value) => <button key={value} className={weight === value ? "active" : ""} onClick={() => setWeight(value)}>{value}</button>)}</div>
               </div>
-              <div className="result-meta"><strong>{results.length} 个图标</strong><span>可编辑 SVG · {size}px / {weight}px 描边</span>{selected && <button onClick={() => setSelected(null)}>清除筛选 <X/></button>}{role === "admin" && <button className={deleteMode ? "delete-active" : ""} onClick={() => { setDeleteMode((current) => !current); setCheckedIds([]); }}><Trash2/> {deleteMode ? "退出删除" : "批量删除"}</button>}</div>
-              {role === "admin" && deleteMode && <div className="delete-toolbar"><label><input type="checkbox" checked={results.length > 0 && results.every((icon) => checkedIds.includes(icon.id))} onChange={(event) => { setCheckedIds(event.target.checked ? results.map((icon) => icon.id) : []); selectionAnchor.current = event.target.checked ? results[0]?.id ?? null : null; }}/> 全选当前结果</label><span>已选择 {checkedIds.length} 个 · 按住 Shift 可连续选择</span><div className="move-control"><select aria-label="目标分组" value={moveCategory} onChange={(event) => setMoveCategory(event.target.value as IconCategory)}>{categoryList.map((category) => <option key={category}>{category}</option>)}</select><button className="move-button" disabled={!checkedIds.length} onClick={moveChecked}><FolderInput/> 移动到分组</button></div><button disabled={!checkedIds.length} onClick={deleteChecked}><Trash2/> 删除所选</button></div>}
+              <div className="result-meta"><strong>{results.length} 个图标</strong><span>可编辑 SVG · {size}px / {weight}px 描边</span>{selected && <button onClick={() => setSelected(null)}>清除筛选 <X/></button>}{(!staticMode && role === "admin") && <button className={deleteMode ? "delete-active" : ""} onClick={() => { setDeleteMode((current) => !current); setCheckedIds([]); }}><Trash2/> {deleteMode ? "退出删除" : "批量删除"}</button>}</div>
+              {(!staticMode && role === "admin") && deleteMode && <div className="delete-toolbar"><label><input type="checkbox" checked={results.length > 0 && results.every((icon) => checkedIds.includes(icon.id))} onChange={(event) => { setCheckedIds(event.target.checked ? results.map((icon) => icon.id) : []); selectionAnchor.current = event.target.checked ? results[0]?.id ?? null : null; }}/> 全选当前结果</label><span>已选择 {checkedIds.length} 个 · 按住 Shift 可连续选择</span><div className="move-control"><select aria-label="目标分组" value={moveCategory} onChange={(event) => setMoveCategory(event.target.value as IconCategory)}>{categoryList.map((category) => <option key={category}>{category}</option>)}</select><button className="move-button" disabled={!checkedIds.length} onClick={moveChecked}><FolderInput/> 移动到分组</button></div><button disabled={!checkedIds.length} onClick={deleteChecked}><Trash2/> 删除所选</button></div>}
             </div>
             {results.length ? <div className="icon-grid">{results.map((icon) => <IconCard key={icon.id} icon={icon} size={size} weight={weight} copied={copied} copy={copy} downloadSvg={downloadSvg} downloadPng={downloadPng} deleteMode={deleteMode} checked={checkedIds.includes(icon.id)} toggleChecked={toggleChecked} menuOpen={activeMenuId === icon.id} toggleMenu={() => setActiveMenuId((current) => current === icon.id ? null : icon.id)} closeMenu={() => setActiveMenuId(null)}/>)}</div> : <div className="empty-state"><Search/><h2>没有找到匹配图标</h2><p>试试更短的关键词，或清除分类筛选。</p><button onClick={() => {setQuery(""); setSelected(null);}}>重置筛选</button></div>}
           </main>
@@ -396,7 +397,7 @@ export function IconLibrary() {
           <div className="modal-actions"><button type="button" className="secondary-button" onClick={() => setLoginOpen(false)}>取消</button><button className="primary-button" disabled={loginPending || !loginForm.username || !loginForm.password}>{loginPending ? "登录中…" : "登录"}</button></div>
         </form>
       </div>}
-      {role === "admin" && categoryManagerOpen && <div className="modal-backdrop" onMouseDown={(event) => event.target === event.currentTarget && setCategoryManagerOpen(false)}>
+      {(!staticMode && role === "admin") && categoryManagerOpen && <div className="modal-backdrop" onMouseDown={(event) => event.target === event.currentTarget && setCategoryManagerOpen(false)}>
         <section className="category-modal" role="dialog" aria-modal="true" aria-labelledby="category-title">
           <div className="upload-head"><div><p className="eyebrow">CATEGORY MANAGEMENT</p><h2 id="category-title">图标分类管理</h2></div><button className="icon-button" onClick={() => setCategoryManagerOpen(false)} aria-label="关闭分类管理"><X/></button></div>
           <p className="upload-description">新增、重命名或调整分类顺序。删除非空分类时，需要先把其中图标迁移到其他分类。</p>
@@ -404,7 +405,7 @@ export function IconLibrary() {
           <div className="category-manage-list">{categoryList.map((category, index) => <div className="category-manage-row" key={category}>{editingCategory === category ? <form className="category-rename" onSubmit={(event) => { event.preventDefault(); renameCategory(category); }}><input autoFocus aria-label={`修改${category}分类名称`} value={editingCategoryName} onChange={(event) => setEditingCategoryName(event.target.value)}/><button aria-label="保存分类名称"><Check/></button><button type="button" aria-label="取消修改" onClick={() => setEditingCategory(null)}><X/></button></form> : <><span><strong>{category}</strong><small>{counts[category] || 0} 个图标</small></span><div className="category-row-actions"><button disabled={index === 0} onClick={() => moveCategoryOrder(category, -1)} aria-label={`${category}上移`}><ArrowUp/></button><button disabled={index === categoryList.length - 1} onClick={() => moveCategoryOrder(category, 1)} aria-label={`${category}下移`}><ArrowDown/></button><button onClick={() => { setEditingCategory(category); setEditingCategoryName(category); }} aria-label={`重命名${category}`}><Pencil/></button><button className="danger" disabled={categoryList.length < 2} onClick={() => deleteCategory(category)} aria-label={`删除${category}`}><Trash2/></button></div></>}</div>)}</div>
         </section>
       </div>}
-      {role === "admin" && uploadOpen && <div className="modal-backdrop" onMouseDown={(event) => event.target === event.currentTarget && setUploadOpen(false)}>
+      {(!staticMode && role === "admin") && uploadOpen && <div className="modal-backdrop" onMouseDown={(event) => event.target === event.currentTarget && setUploadOpen(false)}>
         <section className="upload-modal" role="dialog" aria-modal="true" aria-labelledby="upload-title">
           <div className="upload-head"><div><p className="eyebrow">LOCAL ICON IMPORT</p><h2 id="upload-title">上传可编辑图标</h2></div><button className="icon-button" onClick={() => setUploadOpen(false)} aria-label="关闭上传窗口"><X/></button></div>
           <p className="upload-description">支持一次上传多个 SVG。文件会保存在当前浏览器中，不会上传到服务器。</p>
